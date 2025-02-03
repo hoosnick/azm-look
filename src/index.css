@@ -1,68 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  color-scheme: dark;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  @apply bg-black text-white font-jakarta antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.ios-blur {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.ios-button {
+  @apply bg-white/10 hover:bg-white/20 active:bg-white/15 
+         backdrop-blur-xl rounded-full px-6 py-3 
+         font-medium transition-all duration-200
+         disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.ios-card {
+  @apply bg-[#1c1c1e] rounded-2xl border border-white/10;
+}
+
+.filter-scroll {
+  @apply flex md:grid gap-3 overflow-x-auto md:overflow-y-auto pb-4 md:pb-0 snap-x snap-mandatory md:snap-none md:grid-cols-2;
+  height: calc(100% - 48px);
+  scrollbar-width: none;
+  scroll-padding-left: 10px;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-item {
+  @apply flex-none w-[140px] md:w-auto snap-start;
+}
+
+.loading-blur {
+  @apply backdrop-blur-md bg-black/30;
+  transition: all 0.3s ease-in-out;
 }
