@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
-import { Download, Loader2, ImagePlus } from 'lucide-react';
-import { ImageState, Filter } from '../types';
+import React, { useRef } from "react";
+import { Download, Loader2, ImagePlus } from "lucide-react";
+import { ImageState, Filter } from "../types";
 
 interface Props {
   imageState: ImageState;
@@ -76,10 +76,6 @@ const Editor: React.FC<Props> = ({
       {/* Filters */}
       <div className="flex-none md:w-72 h-[40vh] md:h-full">
         <div className="h-full md:ios-card md:p-4">
-          <div className="flex items-center px-4 md:px-0 mb-4">
-            <h2 className="text-lg font-semibold">Select Style</h2>
-          </div>
-
           <div ref={filterScrollRef} className="filter-scroll px-4 md:px-0">
             {filters.map((filter) => (
               <div
@@ -90,8 +86,8 @@ const Editor: React.FC<Props> = ({
                 <div
                   className={`aspect-[3/4] relative rounded-xl overflow-hidden cursor-pointer ${
                     selectedFilter?.id === filter.id
-                      ? 'ring-2 ring-purple-500'
-                      : ''
+                      ? "ring-2 ring-purple-500"
+                      : ""
                   }`}
                 >
                   <img

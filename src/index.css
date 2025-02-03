@@ -31,11 +31,12 @@ body {
 
 .filter-scroll {
   @apply flex md:grid gap-3 overflow-x-auto md:overflow-y-auto pb-4 md:pb-0 snap-x snap-mandatory md:snap-none md:grid-cols-2;
-  height: calc(100% - 48px);
+  height: 100%;
   scrollbar-width: none;
   scroll-padding-left: 10px;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
+  flex-wrap: wrap;
 }
 
 .filter-scroll::-webkit-scrollbar {
@@ -43,7 +44,7 @@ body {
 }
 
 .filter-item {
-  @apply flex-none w-[140px] md:w-auto snap-start;
+  @apply flex-auto w-[120px] md:w-auto snap-start;
 }
 
 .loading-blur {
