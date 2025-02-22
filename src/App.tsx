@@ -1,9 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
-import Header from './components/Header';
-import ImageUpload from './components/ImageUpload';
-import Editor from './components/Editor';
-import { Filter, ImageState } from './types';
-import { apiService } from './services/api';
+import { useState, useCallback, useEffect } from "react";
+import ImageUpload from "./components/ImageUpload";
+import Editor from "./components/Editor";
+import { Filter, ImageState } from "./types";
+import { apiService } from "./services/api";
 
 function App() {
   const [filters, setFilters] = useState<Filter[]>([]);
@@ -27,7 +26,7 @@ function App() {
         setFilters(filters);
       })
       .catch((error) => {
-        console.error('Failed to load filters:', error);
+        console.error("Failed to load filters:", error);
       });
   }, []);
 
@@ -36,7 +35,7 @@ function App() {
       // Show original image immediately
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImageState((prev: any) => ({
+        setImageState((prev: ImageState) => ({
           ...prev,
           original: e.target?.result as string,
         }));
@@ -58,9 +57,10 @@ function App() {
         error: null,
       }));
     } catch (error) {
+      console.error("Upload error:", error);
       setImageState((prev) => ({
         ...prev,
-        error: 'Failed to upload image',
+        error: "Failed to upload image",
       }));
     }
   }, []);
@@ -91,10 +91,11 @@ function App() {
           error: null,
         }));
       } catch (error) {
+        console.error("Apply filter error:", error);
         setImageState((prev) => ({
           ...prev,
           loading: false,
-          error: 'Failed to process image',
+          error: "Failed to process image",
         }));
       }
     },
@@ -103,9 +104,9 @@ function App() {
 
   const handleDownload = useCallback(() => {
     if (imageState.processed) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = imageState.processed;
-      link.download = 'processed-image.jpg';
+      link.download = "processed-image.jpg";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -121,13 +122,12 @@ function App() {
       resourceId: null,
     });
     setSelectedFilter(null);
+    
   }, []);
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Header />
-
-      <main className="pt-[60px]">
+      <main>
         {!imageState.original ? (
           <ImageUpload onImageUpload={handleImageUpload} />
         ) : (

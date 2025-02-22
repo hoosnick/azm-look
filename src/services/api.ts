@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
+import { ApiFilter } from "../types";
 
-const PROXY_URL = "https://cors-anywhere.herokuapp.com/";
+const PROXY_URL = "https://psycho-serve.vercel.app/?url=";
 const API_BASE_URL = "https://app.nufa.ai/api/v1";
 const WS_URL = "wss://app-webs.nufa.ai";
 
@@ -12,16 +13,8 @@ const api = axios.create({
   headers: {
     accept: "*/*",
     "content-type": "application/json",
-    // 'api-auth-key': 'undefined',
-    // origin: 'https://web.nufa.ai',
-    // referer: 'https://web.nufa.ai/',
   },
 });
-
-export interface ApiFilter {
-  id: string;
-  image_url: string;
-}
 
 class ApiService {
   private apiKey: string | null = null;

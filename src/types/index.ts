@@ -10,3 +10,8 @@ export interface ImageState {
   error: string | null;
   resourceId: string | null;
 }
+
+export interface ApiFilter {
+  id: string;
+  image_url: string;
+}

@@ -24,9 +24,9 @@ const Editor: React.FC<Props> = ({
   if (!imageState.original) return null;
 
   return (
-    <div className="h-[calc(100vh-60px)] flex flex-col md:flex-row md:gap-6 md:p-6">
+    <div className="h-screen flex flex-col md:flex-row md:gap-6 md:p-6">
       {/* Image */}
-      <div className="flex-1 h-[60vh] md:h-full relative">
+      <div className="flex-1 h-screen md:h-full relative">
         <div className="absolute inset-0 p-4">
           <div className="ios-card h-full relative">
             {imageState.loading ? (
@@ -52,7 +52,7 @@ const Editor: React.FC<Props> = ({
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="flex gap-3">
                   <button
-                    className="ios-button flex-1 flex items-center justify-center gap-2"
+                    className="ios-button flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600"
                     onClick={onReset}
                   >
                     <ImagePlus className="w-4 h-4" />
