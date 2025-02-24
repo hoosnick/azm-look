@@ -1,18 +1,11 @@
 import React from "react";
-import { Image as ImageIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface Props {
-  onImageUpload: (file: File) => void;
+  onGetStarted: () => void;
 }
 
-const ImageUpload: React.FC<Props> = ({ onImageUpload }) => {
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onImageUpload(file);
-    }
-  };
-
+const Landing: React.FC<Props> = ({ onGetStarted }) => {
   return (
     <div className="relative min-h-screen">
       {/* Background Video */}
@@ -43,20 +36,17 @@ const ImageUpload: React.FC<Props> = ({ onImageUpload }) => {
             Experience AI-powered photo transformation
           </p>
 
-          <label className="ios-button flex items-center gap-2 cursor-pointer bg-purple-500 hover:bg-purple-600">
-            <ImageIcon className="w-5 h-5" />
-            <span>Choose from Gallery</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileInput}
-              className="hidden"
-            />
-          </label>
+          <button
+            onClick={onGetStarted}
+            className="ios-button flex items-center gap-2 cursor-pointer bg-purple-500 hover:bg-purple-600"
+          >
+            <span>Get Started</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default ImageUpload;
+export default Landing;
