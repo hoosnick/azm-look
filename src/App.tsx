@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from "react";
-import ImageUpload from "./components/ImageUpload";
+import { useState, useCallback } from "react";
+import Landing from "./components/Landing";
 import Editor from "./components/Editor";
 import { Filter, ImageState } from "./types";
 import { apiService } from "./services/api";
 
 function App() {
+  const [isEditorMode, setIsEditorMode] = useState(false);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<Filter | null>(null);
   const [imageState, setImageState] = useState<ImageState>({
@@ -15,55 +16,49 @@ function App() {
     resourceId: null,
   });
 
-  useEffect(() => {
-    apiService
-      .getFilters()
-      .then((apiFilters) => {
-        const filters: Filter[] = apiFilters.map((filter) => ({
-          id: filter.id,
-          image: filter.image_url,
-        }));
-        setFilters(filters);
-      })
-      .catch((error) => {
-        console.error("Failed to load filters:", error);
-      });
+  const handleError = useCallback((message: string, error: unknown) => {
+    console.error(message, error);
+    setImageState((prev) => ({
+      ...prev,
+      loading: false,
+      error: message,
+    }));
   }, []);
 
-  const handleImageUpload = useCallback(async (file: File) => {
-    try {
-      // Show original image immediately
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImageState((prev: ImageState) => ({
-          ...prev,
-          original: e.target?.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImageState((prev) => ({
+            ...prev,
+            original: e.target?.result as string,
+          }));
+        };
+        reader.readAsDataURL(file);
 
-      const fileToBlob = async (file: File) =>
-        new Blob([new Uint8Array(await file.arrayBuffer())], {
+        // Cleanup after file is loaded
+        reader.onloadend = () => {
+          reader.onload = null;
+        };
+
+        const blobFile = new Blob([new Uint8Array(await file.arrayBuffer())], {
           type: file.type,
         });
-      const blobFile = await fileToBlob(file);
 
-      // Upload to API
-      const resourceId = await apiService.uploadImage(file, blobFile);
-      setImageState((prev) => ({
-        ...prev,
-        resourceId,
-        processed: null,
-        error: null,
-      }));
-    } catch (error) {
-      console.error("Upload error:", error);
-      setImageState((prev) => ({
-        ...prev,
-        error: "Failed to upload image",
-      }));
-    }
-  }, []);
+        const resourceId = await apiService.uploadImage(file, blobFile);
+        setImageState((prev) => ({
+          ...prev,
+          resourceId,
+          processed: null,
+          error: null,
+        }));
+      } catch (error) {
+        handleError("Failed to upload image", error);
+      }
+    },
+    [handleError]
+  );
 
   const handleFilterSelect = useCallback(
     async (filter: Filter) => {
@@ -91,15 +86,10 @@ function App() {
           error: null,
         }));
       } catch (error) {
-        console.error("Apply filter error:", error);
-        setImageState((prev) => ({
-          ...prev,
-          loading: false,
-          error: "Failed to process image",
-        }));
+        handleError("Failed to process image", error);
       }
     },
-    [imageState.resourceId]
+    [imageState, handleError]
   );
 
   const handleDownload = useCallback(() => {
@@ -113,23 +103,24 @@ function App() {
     }
   }, [imageState.processed]);
 
-  const handleReset = useCallback(() => {
-    setImageState({
-      original: null,
-      processed: null,
-      loading: false,
-      error: null,
-      resourceId: null,
-    });
-    setSelectedFilter(null);
-    
+  const handleGetStarted = useCallback(() => {
+    const fetchFilters = async () => {
+      try {
+        const filters = await apiService.getFilters();
+        setFilters(filters);
+      } catch (error) {
+        console.error("Failed to load filters:", error);
+      }
+    };
+    fetchFilters();
+    setIsEditorMode(true);
   }, []);
 
   return (
     <div className="min-h-screen bg-black text-white">
       <main>
-        {!imageState.original ? (
-          <ImageUpload onImageUpload={handleImageUpload} />
+        {!isEditorMode ? (
+          <Landing onGetStarted={handleGetStarted} />
         ) : (
           <Editor
             imageState={imageState}
@@ -137,7 +128,7 @@ function App() {
             selectedFilter={selectedFilter}
             onFilterSelect={handleFilterSelect}
             onDownload={handleDownload}
-            onReset={handleReset}
+            onImageUpload={handleImageUpload}
           />
         )}
       </main>

@@ -13,6 +13,25 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+@keyframes sparkle {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 1.5s infinite ease-in-out;
+}
+
 .ios-blur {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -29,25 +48,13 @@ body {
   @apply bg-[#1c1c1e] rounded-2xl border border-white/10;
 }
 
-.filter-scroll {
-  @apply flex md:grid gap-3 overflow-x-auto md:overflow-y-auto pb-4 md:pb-0 snap-x snap-mandatory md:snap-none md:grid-cols-2;
-  height: 100%;
-  scrollbar-width: none;
-  scroll-padding-left: 10px;
-  -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
-  flex-wrap: wrap;
-}
-
-.filter-scroll::-webkit-scrollbar {
+/* For Webkit-based browsers (Chrome, Safari and Opera) */
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
-.filter-item {
-  @apply flex-auto w-[120px] md:w-auto snap-start;
-}
-
-.loading-blur {
-  @apply backdrop-blur-md bg-black/30;
-  transition: all 0.3s ease-in-out;
+/* For IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
