@@ -1,51 +1,62 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { ApiFilter } from "../types";
+import { Filter } from "../types";
 
 const PROXY_URL = "https://psycho-serve.vercel.app/?url=";
 const API_BASE_URL = "https://app.nufa.ai/api/v1";
 const WS_URL = "wss://app-webs.nufa.ai";
 
+// Common Headers
+const JSON_HEADERS = {
+  accept: "*/*",
+  "content-type": "application/json",
+};
+
+const MULTIPART_HEADERS = {
+  "Content-Type": "multipart/form-data",
+  priority: "u=1, i",
+};
+
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: PROXY_URL + API_BASE_URL,
-  headers: {
-    accept: "*/*",
-    "content-type": "application/json",
-  },
+  baseURL: `${PROXY_URL}${API_BASE_URL}`,
+  headers: JSON_HEADERS,
 });
 
 class ApiService {
-  private apiKey: string | null = null;
+  private apiKey: string | null = localStorage.getItem("nufa_api_key");
   private ws: WebSocket | null = null;
 
   constructor() {
-    this.apiKey = localStorage.getItem("nufa_api_key");
     if (this.apiKey) {
       api.defaults.headers.common["api-auth-key"] = this.apiKey;
     }
   }
 
   private async ensureAuth(): Promise<string> {
-    if (this.apiKey) {
-      return this.apiKey;
-    }
+    if (this.apiKey) return this.apiKey;
 
     try {
       const tempId = uuidv4();
-      const response = await api.post("/temp-auth", { temp_id: tempId });
-      const authToken = response.data["auth-token"];
+      const { data } = await api.post("/temp-auth", { temp_id: tempId });
+      this.apiKey = data["auth-token"];
 
-      this.apiKey = authToken;
-      localStorage.setItem("nufa_api_key", authToken);
-      api.defaults.headers.common["api-auth-key"] = authToken;
-
-      return authToken;
+      if (this.apiKey) {
+        localStorage.setItem("nufa_api_key", this.apiKey);
+        api.defaults.headers.common["api-auth-key"] = this.apiKey;
+        return this.apiKey;
+      } else {
+        throw new Error("Failed to authenticate with API");
+      }
     } catch (error) {
-      console.error("Authentication failed:", error);
+      this.handleError("Authentication failed", error);
       throw new Error("Failed to authenticate");
     }
+  }
+
+  private handleError(message: string, error: unknown): void {
+    console.error(message, error);
   }
 
   async uploadImage(file: File, blob: Blob): Promise<string> {
@@ -53,47 +64,45 @@ class ApiService {
 
     const formData = new FormData();
     formData.append(file.name, blob, "blob");
-    const config = [{ key: file.name, type: "input_image" }];
-    formData.append("config", JSON.stringify(config));
+    formData.append(
+      "config",
+      JSON.stringify([{ key: file.name, type: "input_image" }])
+    );
 
     try {
-      const response = await api.post("/photo/register-resource", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          priority: "u=1, i",
-        },
+      const { data } = await api.post("/photo/register-resource", formData, {
+        headers: MULTIPART_HEADERS,
       });
-
-      const [result] = response.data;
-      return result.id;
+      return data[0].id;
     } catch (error) {
-      console.error("Upload failed:", error);
+      this.handleError("Upload failed", error);
       throw new Error("Failed to upload image");
     }
   }
 
-  async getFilters(): Promise<ApiFilter[]> {
+  async getFilters(): Promise<Filter[]> {
     await this.ensureAuth();
 
     try {
-      const response = await api.get("/configs/home-filters");
+      const { data } = await api.get("/configs/home-filters");
 
-      const seenIds = new Set<string>(); // Track unique IDs
+      const seenIds = new Set<string>();
+      const filters = data
+        .filter((cat: any) => cat.type === "category")
+        .flatMap((cat: any) =>
+          cat.items.map((item: any) => ({
+            id: item.id,
+            image: item.image_url,
+            category: cat.name,
+          }))
+        )
+        .filter(({ id }: { id: string }) =>
+          seenIds.has(id) ? false : seenIds.add(id)
+        );
 
-      return response.data
-        .filter((category: any) => category.type === "category")
-        .flatMap((category: any) => category.items)
-        .map((item: any) => ({
-          id: item.id,
-          image_url: item.image_url,
-        }))
-        .filter((item: any) => {
-          if (seenIds.has(item.id)) return false; // Skip duplicates
-          seenIds.add(item.id);
-          return true;
-        });
+      return filters;
     } catch (error) {
-      console.error("Failed to fetch filters:", error);
+      this.handleError("Failed to fetch filters", error);
       throw new Error("Failed to fetch filters");
     }
   }
@@ -102,26 +111,19 @@ class ApiService {
     await this.ensureAuth();
 
     try {
-      const response = await api.post("/photo/action-sequence", [
+      const { data } = await api.post("/photo/action-sequence", [
         {
           action: "apply-filter",
           config: {
             filter_id: filterId,
             output_count: 1,
-            input: [
-              {
-                id: imageId,
-                type: "input_image",
-              },
-            ],
+            input: [{ id: imageId, type: "input_image" }],
           },
         },
       ]);
-
-      const [result] = response.data;
-      return result.action_id;
+      return data[0].action_id;
     } catch (error) {
-      console.error("Failed to apply filter:", error);
+      this.handleError("Failed to apply filter", error);
       throw new Error("Failed to apply filter");
     }
   }
@@ -129,18 +131,17 @@ class ApiService {
   listenToProcessing(actionId: string): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.apiKey) {
-        reject(new Error("No API key available"));
-        return;
+        return reject(new Error("No API key available"));
       }
 
+      // Close existing WebSocket connection
       if (this.ws) {
         this.ws.close();
-        this.ws = null;
       }
 
       this.ws = new WebSocket(`${WS_URL}/?key=${this.apiKey}`);
 
-      this.ws.onopen = () => {
+      this.ws.addEventListener("open", () => {
         this.ws?.send(
           JSON.stringify({
             name: "processing-connect",
@@ -149,37 +150,41 @@ class ApiService {
           })
         );
         console.log("Action ID:", actionId);
-      };
+      });
 
-      this.ws.onmessage = (event) => {
+      this.ws.addEventListener("message", (event) => {
         try {
           const message = JSON.parse(event.data);
 
           if (message.name === "processing-estimate") {
-            const data = JSON.parse(message.data);
-            console.log("Processing estimate:", data.estimated_seconds, "s");
+            const { estimated_seconds } = JSON.parse(message.data);
+            console.log("Processing estimate:", estimated_seconds, "s");
           }
 
           if (message.name === "processing-resource-ready") {
-            const data = JSON.parse(message.data);
-            console.log("Resource ready:", data.url);
+            const { url } = JSON.parse(message.data);
+            console.log("Resource ready:", url);
             this.ws?.close();
-            resolve(data.url);
+            resolve(url);
           }
         } catch (error) {
-          console.error("WebSocket message error:", error);
+          this.handleError("WebSocket message error", error);
           reject(error);
         }
-      };
+      });
 
-      this.ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+      this.ws.addEventListener("error", (error) => {
+        this.handleError("WebSocket error", error);
         reject(error);
-      };
+      });
+
+      // Cleanup WebSocket listeners when done
+      this.ws.addEventListener("close", () => {
+        this.ws = null;
+      });
     });
   }
 }
 
 export const apiService = new ApiService();
-
 export { api };
