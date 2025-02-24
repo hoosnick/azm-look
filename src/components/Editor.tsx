@@ -201,6 +201,7 @@ const Editor: React.FC<Props> = ({
                 <img
                   src={imageState.processed}
                   alt="Processed"
+                  id="processed-image"
                   className="w-full h-full object-cover"
                 />
               </div>

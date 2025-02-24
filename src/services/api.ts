@@ -200,6 +200,17 @@ class ApiService {
       });
     });
   }
+
+  async fetchImage(url: string): Promise<string> {
+    try {
+      const response = await api.get(PROXY_URL + url, { responseType: "blob" });
+      const blob = new Blob([response.data], { type: response.data.type });
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      this.handleError("Failed to fetch image", error);
+      throw new Error("Failed to fetch image");
+    }
+  }
 }
 
 export const apiService = new ApiService();

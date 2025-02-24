@@ -15,6 +15,7 @@ function App() {
     error: null,
     resourceId: null,
   });
+  const [processedBlobUrl, setProcessedBlobUrl] = useState<string | null>(null);
 
   const handleError = useCallback((message: string, error: unknown) => {
     console.error(message, error);
@@ -37,7 +38,6 @@ function App() {
         };
         reader.readAsDataURL(file);
 
-        // Cleanup after file is loaded
         reader.onloadend = () => {
           reader.onload = null;
         };
@@ -79,12 +79,16 @@ function App() {
         );
         const processedImageUrl = await apiService.listenToProcessing(actionId);
 
+        const blobUrl = await apiService.fetchImage(processedImageUrl);
+
         setImageState((prev) => ({
           ...prev,
           loading: false,
           processed: processedImageUrl,
           error: null,
         }));
+
+        setProcessedBlobUrl(blobUrl);
       } catch (error) {
         handleError("Failed to process image", error);
       }
@@ -93,15 +97,15 @@ function App() {
   );
 
   const handleDownload = useCallback(() => {
-    if (imageState.processed) {
-      const link = document.createElement("a");
-      link.href = imageState.processed;
-      link.download = "processed-image.jpg";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }, [imageState.processed]);
+    if (!processedBlobUrl) return;
+
+    const link = document.createElement("a");
+    link.href = processedBlobUrl;
+    link.download = "processed-image.jpeg";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [processedBlobUrl]);
 
   const handleGetStarted = useCallback(() => {
     const fetchFilters = async () => {
