@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
+import { jwtDecode } from "jwt-decode";
 import { Filter } from "../types";
 
 const PROXY_URL = "https://psycho-serve.vercel.app/?url=";
@@ -35,24 +36,39 @@ class ApiService {
   }
 
   private async ensureAuth(): Promise<string> {
-    if (this.apiKey) return this.apiKey;
+    if (this.apiKey && !this.isTokenExpired(this.apiKey)) {
+      return this.apiKey;
+    }
 
     try {
-      const tempId = uuidv4();
-      const { data } = await api.post("/temp-auth", { temp_id: tempId });
-      this.apiKey = data["auth-token"];
+      const { data } = await api.post("/temp-auth", { temp_id: uuidv4() });
+      const authToken = data["auth-token"];
 
-      if (this.apiKey) {
-        localStorage.setItem("nufa_api_key", this.apiKey);
-        api.defaults.headers.common["api-auth-key"] = this.apiKey;
-        return this.apiKey;
-      } else {
-        throw new Error("Failed to authenticate with API");
+      if (!authToken) {
+        throw new Error("No auth token received from API");
       }
+
+      this.apiKey = authToken;
+      localStorage.setItem("nufa_api_key", authToken);
+      api.defaults.headers.common["api-auth-key"] = authToken;
+
+      return authToken;
     } catch (error) {
       this.handleError("Authentication failed", error);
       throw new Error("Failed to authenticate");
     }
+  }
+
+  private isTokenExpired(token: string): boolean {
+    const decodedToken: any = jwtDecode(token);
+    const currentTime = Date.now() / 1000;
+    console.log(
+      "Token expiry:",
+      decodedToken.exp,
+      "Expired:",
+      decodedToken.exp < currentTime
+    );
+    return decodedToken.exp < currentTime;
   }
 
   private handleError(message: string, error: unknown): void {
