@@ -1,6 +1,7 @@
 export interface Filter {
   id: string;
   image: string;
+  category: string;
 }
 
 export interface ImageState {
@@ -9,9 +10,4 @@ export interface ImageState {
   loading: boolean;
   error: string | null;
   resourceId: string | null;
-}
-
-export interface ApiFilter {
-  id: string;
-  image_url: string;
 }
